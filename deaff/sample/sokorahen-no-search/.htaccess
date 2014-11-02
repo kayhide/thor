@@ -1,0 +1,3 @@
+RewriteEngine Off
+RewriteEngine On
+RewriteBase /

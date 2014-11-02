@@ -1,0 +1,9 @@
+desc 'Start CoffeeScript compiler'
+task :coffee do
+  sh 'coffee -o ./ -cw ./*.coffee'
+end
+
+desc 'Start http server'
+task :server do
+  sh 'python -m SimpleHTTPServer'
+end

@@ -60,7 +60,7 @@ class Deaff < Thor::Group
     @build_dir = File.join(@base_dir, 'build')
 
     empty_directory @base_dir
-    directory src_dir, @original_dir
+    directory File.expand_path(src_dir), @original_dir
   end
 
   def utf8
