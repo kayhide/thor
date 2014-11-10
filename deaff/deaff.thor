@@ -71,7 +71,7 @@ class Deaff < Thor::Group
         text = input.read.toutf8
       end
       open(src, 'w') do |output|
-        output << text.gsub(/shift_jis|sjis/i, 'utf-8').gsub("\r", '')
+        output << text.gsub(/shift_jis|sjis/i, 'UTF-8').gsub("\r", '')
       end
     end
   end
