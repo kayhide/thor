@@ -11,17 +11,17 @@ class Deaff < Thor::Group
 
   class Link
     attr_accessor :ziplink, :display, :value
+    attr_reader :ziplink_host, :ziplink_path
     def initialize row
-      @ziplink, @value, @display = *row
+      @ziplink, @value, @display, @host = *row
+      @ziplink_host = @ziplink && URI.parse(@ziplink).host
+      @ziplink_path = @ziplink && URI.parse(@ziplink).path
     end
     def ord_str separator = ','
       @value.each_char.map(&:ord).map(&:to_s).join(separator)
     end
-    def ziplink_host
-      @ziplink_host ||= URI.parse(@ziplink).host
-    end
-    def ziplink_path
-      @ziplink_path ||= URI.parse(@ziplink).path
+    def host
+      @host || self.ziplink_host
     end
   end
 
@@ -35,12 +35,13 @@ class Deaff < Thor::Group
     top_page = open(File.join(src_dir, 'index.html')).read
     @deaff_links_filename = '.deaff'
     csv = CSV.read(@deaff_links_filename)
-    @links = csv.map{|row| Link.new row}
-    @links.select! do |link|
-      (link.display =~ /^http/) && top_page.include?(link.ziplink_host)
+    @links = csv.map{|row| Link.new row}.select do |link|
+      link.display =~ /^http/
+    end.select do |link|
+      top_page.include?(link.host)
     end
     @links.each do |link|
-      say link.ziplink, :blue
+      say (link.ziplink || link.display), :blue
     end
   end
 
@@ -60,6 +61,7 @@ class Deaff < Thor::Group
     @build_dir = File.join(@base_dir, 'build')
 
     empty_directory @base_dir
+    remove_file @original_dir
     directory File.expand_path(src_dir), @original_dir
   end
 
@@ -83,7 +85,7 @@ class Deaff < Thor::Group
 <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
 EOS
 
-      pattern = @links.map{|l| Regexp.escape(l.ziplink_path)}.join('|')
+      pattern = @links.select(&:ziplink).map{|l| Regexp.escape(l.ziplink_path)}.join('|')
       gsub_file src, /[^"]*(#{pattern})/ do |m|
         @links.find{|l| m.include? l.ziplink_path}.display
       end
@@ -127,6 +129,7 @@ EOS
 EOS
     end
 
+    remove_file @build_dir
     empty_directory @build_dir
     FileUtils.cp_r File.join(@source_dir, '.'), @build_dir
   end
